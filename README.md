@@ -1,5 +1,20 @@
 # Commercial Paper Demo
 
+## Review branch runtime configuration
+
+This historical Fabric 0.6 demo now requires `SESSION_SECRET` (at least 32
+characters) before it loads the SDK or starts networking. Supply it through your
+secret manager. Production session cookies require HTTPS; set `TRUST_PROXY=1`
+only behind a trusted proxy. Deployment telemetry is off unless
+`TRACK_DEPLOYMENT=1`. Globally disabling TLS verification is rejected.
+
+Run `npm test` for the dependency-free configuration checks. The changes do not
+migrate Fabric 0.6, replace demo authentication, or supply a production session
+store. See [the review and development plan](DEVELOPMENT_REVIEW_AR.md).
+
+`mycreds.json` is no longer tracked. Rotate any credentials previously published
+and follow GitHub's sensitive-data removal process for historical copies.
+
 [![Deploy to Bluemix](https://bluemix.net/deploy/button.png)](https://bluemix.net/deploy?repository=https://github.com/IBM-Blockchain/cp-web.git)
 
 ## NOTICE

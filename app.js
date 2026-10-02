@@ -1,4 +1,6 @@
 'use strict';
+// Validate configuration before loading SDKs, binding sockets, or contacting services.
+var runtimeConfig = require('./utils/runtime-config')();
 /*******************************************************************************
  * Copyright (c) 2015 IBM Corp.
  *
@@ -54,7 +56,8 @@ function setCustomCC(res, path) {
 }
 
 // Use a session to track how many requests we receive from a client (See below)
-app.use(session({secret: 'Somethignsomething1234!test', resave: true, saveUninitialized: true}));
+if (runtimeConfig.trustProxy) app.set('trust proxy', 1);
+app.use(session(runtimeConfig.session));
 
 // Enable CORS preflight across the board so browser will let the app make REST requests
 app.options('*', cors());
@@ -65,7 +68,7 @@ app.use(function (req, res, next) {
     console.log('----------------------------------------- incoming request -----------------------------------------');
     // Create a bag for passing information back to the client
     req.bag = {};
-    req.session.count = req.session.count + 1;
+    req.session.count = (req.session.count || 0) + 1;
     req.bag.session = req.session;
     next();
 });
@@ -87,7 +90,7 @@ app.use(function (err, req, res, next) {		// = development error handler, print 
     console.log(TAG, 'Error Handler -', req.url);
     var errorCode = err.status || 500;
     res.status(errorCode);
-    req.bag.error = {msg: err.stack, status: errorCode};
+    req.bag.error = {msg: app.get('env') === 'production' ? 'Request failed' : err.stack, status: errorCode};
     if (req.bag.error.status == 404) req.bag.error.msg = 'Sorry, I cannot locate that file';
     res.render('template/error', {bag: req.bag});
 });
@@ -99,17 +102,17 @@ app.use(function (err, req, res, next) {		// = development error handler, print 
 var host = setup.SERVER.HOST;
 var port = setup.SERVER.PORT;
 console.log(TAG, 'Staring http server on: ' + host + ':' + port);
-var server = http.createServer(app).listen(port, function () {
+var server = http.createServer(app).listen(port, host, function () {
     console.log(TAG, 'Server Up - ' + host + ':' + port);
 });
 
 // Some setting that we've found make our life easier
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 server.timeout = 240000;
 
 // Track application bluemix deployments.  All we're tracking is number of deployments.
-console.log(TAG, '---- Tracking Deployment');
-require('cf-deployment-tracker-client').track();
+if (runtimeConfig.trackDeployment) {
+    require('cf-deployment-tracker-client').track();
+}
 
 // =====================================================================================================================
 // 												Network credentials
@@ -299,6 +302,7 @@ function start_websocket_server(error, d) {
                 path: '/chain',
                 method: 'GET'
             };
+            if (useTLS) options.ca = certificate;
 
             function success(statusCode, headers, resp) {
                 resp = JSON.parse(resp);
