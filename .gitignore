@@ -18,4 +18,5 @@ cc_summaries/*.json
 
 .tmp
 test.js
+/mycreds.json
 

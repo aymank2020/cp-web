@@ -4,7 +4,8 @@
   "description": "An example commercial paper trading application built on a blockchain.",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js"
+    "start": "node app.js",
+    "test": "node checks/runtime-config.test.js"
   },
   "dependencies": {
     "async": "^2.1.2",
